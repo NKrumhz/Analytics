@@ -1,0 +1,42 @@
+library(ggplot2)
+library(ggmap)
+library(spatstat)
+
+City <- c("Cleveland, OH", "Chicago", "Boston", "Dallas", "Atlanta", "San Francisco", "Philadelphia")
+type <- c(rep("Factory", 3), rep("DC", 4))
+
+# Results of how much of each product to send from each factory to each 
+# distrubution center from AMPL model 
+X <- c(0, 10, 25, 0, 45, 0, 5, 0, 0, 10, 0, 30)
+# want to plot this information on a map 
+usa.map <- get_googlemap("usa", scale = 2, zoom = 4, maptype = "roadmap")
+loc.geo <- geocode(City, source = "dsk")
+Portfolio <- data.frame(City, type, loc.geo)
+
+
+
+# calculate the routes
+#there are few enough to list them manually 
+ChtoD <- route(City[2], City[4])
+ChtoD$shipped <- rep(X[5], nrow(ChtoD))
+
+CltoA <- route(City[1], City[5])
+CltoA$shipped <- rep(X[2], nrow(CltoA))
+BstoA <- route(City[3], City[5])
+BstoA$shipped <- rep(X[10], nrow(BstoA))
+
+CltoSF <- route(City[1], City[6])
+CltoSF$shipped <- rep(X[3], nrow(CltoSF))
+ChtoSF <- route(City[2], City[6])
+ChtoSF$shipped <- rep(X[7], nrow(ChtoSF))
+
+BstoP <- route(City[3], City[7])
+BstoP$shipped <- rep(X[12], nrow(BstoP))
+
+# append to dataframe 
+routes <- do.call("rbind", list(ChtoD, CltoA, BstoA, CltoSF, ChtoSF, BstoP))
+
+# plot data
+ggmap(usa.map) +
+    geom_leg(aes(x = startLon, xend = endLon, y = startLat, yend = endLat, color = shipped), size = 2, data = routes) +
+    geom_point(aes(x = lon, y = lat, shape = type), data = Portfolio, size = 2)
