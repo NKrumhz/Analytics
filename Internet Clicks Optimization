@@ -1,0 +1,76 @@
+## Nathan Krumholz 
+## 5/4/2018
+
+## Goal ##
+# based off of estimated bids of competitors and click through rates for your 
+# existing bids, how much should you bid on each of the 3 search queries? 
+# to maximize the number of clicks
+
+
+library(genalg)
+library(ggplot2)
+
+# CTR# is a function that returns (based on the input bid) what 
+# bracket you will be in, returning the click through rate and adjusted 
+# assumed cost per day. 
+# click-through return of query 1 
+CTR1 <- function(x){
+    if (x == 0) return(c(0, 0))
+    if (0 < x && x <= (20/4)) return(c(0.002, 0.00002))
+    if ((20/4) < x && x <= (60/4)) return(c(0.005, 0.04))
+    if ((60/4) < x && x <= (120/4)) return(c(0.01, 0.23))
+    if ((120/4) <= x) return(c(0.03, 1.2))
+}
+
+# click-through return of query 2
+CTR2 <- function(x){
+    if (x == 0) return(c(0, 0))
+    if (0 < x && x <= (40/6)) return(c(0.002, 0.00002))
+    if ((40/6) < x && x <= (70/6)) return(c(0.005, 0.02 ))
+    if ((70/6) < x) return(c(0.03, 0.48))
+}
+
+# click-through return of query 3
+CTR3 <- function(x){
+    if (x == 0) return(c(0, 0))
+    if (0 < x && x <= (18 / 4)) return(c(0.002, 0.00002))
+    if ((18 / 4) < x && x <= (25 / 4)) return(c(0.005, 0.03))
+    if ((25 / 4) < x && x <= (72 / 4)) return(c(0.01, 0.065))
+    if ((72 / 4) <= x) return(c(0.03, 0.54))
+    }
+
+evaluation <- function(string = c()){
+    returnVal <- 0  # initialize as zero 
+    cat(string)
+    # need to make sure the chromosome is of length 3. 
+    if (length(string) == 3){
+        # subject to a monetary restricition in a day 
+        if (35 * CTR1(string[1])[2] + 12 * CTR2(string[2])[2] + 8 * CTR3(string[3])[2] <= 14){
+            returnVal <- -1 * (35 * CTR1(string[1])[1] + 12 * CTR2(string[2])[1] + 8 * CTR3(string[3])[1])
+        }
+    }
+    else {
+        stop("Incorrect Length")
+    }
+    return(returnVal)
+}
+#Defines the discontinuous functions which return "CTF" in the first slot and "C" in the second,
+#    and the evaluation function for the solver.
+#    rbga is a function that minimizes the error function
+#    which is why the function is multiplied by "-1", since we want to maximize this error.
+#    The Funtions were defined manually because my laptop died while
+#    I was working and decided to calculate the numbers by hand.
+
+lb <- c(0, 0, 0)        # can bid nothing 
+ub <- c(100, 100, 100)  # arbitry maximum bid amount 
+
+## use Genetic Algorithm to optimize 
+ga <- rbga(lb, ub, evalFunc = evaluation, verbose = TRUE, mutationChance = 0.1)
+
+plot(ga)
+cat(summary(ga))
+
+# Take the first bid on queries 2(greater than 16) and 3(greater than 18) and take
+# the 3 rd bid on query 1(less than 23.33) . Still, the amount you should bid on each 
+# query is arbitrary, due to the "essentially" unbouned upper bid limit.
+# The values only specify which of the bidding slots you should stay in.
